@@ -1,0 +1,203 @@
+MATLAB code for constructing a random network according to the configuration model
+
+
+f u n c t i o n [ Adj DEGREE LIST]= FConfMod ( Pk , P0 , N )
+% G e n e r a t e s random network a c c o r d i n g t o i t s d e g r e e d i s t r i b u t i o n
+% Pk − d e g r e e d i s t r i b u t i o n ( 1 s t element c o n t a i n s d e g r e e 1 ) ;
+% P0 − f r a c t i o n o f 0−d e g r e e nodes i n th e network .
+% Pk = Pk / ( sum ( Pk)+P0 ) % N o r m a l i z a t i o n : Pk i s n o r m a l i z e d t o 1−P0 ( i . e . sum ( Pk ) + P0 = 1 ) ;
+
+
+Nk = round ( N . ∗ Pk ) ; % number o f nodes o f d e g r e e k
+[ c , imax ] = max(Nk ) ; Nk( imax ) = Nk( imax ) + (N − sum (Nk) − round (N∗P0 ) ) ; .
+...%% a d j u s t Nk so t h a t sum (Nk) = N
+kmax = l e n g t h ( Pk ) ;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%..
+...%%%%%%%%
+%% Need t o f i l l NodePairs with node numbers a c c o r d i n g t o Pk , . . .
+. . . then s h u f f l e and s p l i t i n t o two columns
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%..
+...%%%%%%%%%%
+
+i f mod( sum (Nk . ∗ ( 1 : kmax ) ’ ) , 2 ) % i f th e number o f s t u b s i s odd , make i t even
+Nk( imax ) = Nk( imax ) −1; % d e c r e a s e peak nodes
+i f ( imax + 1 < kmax )
+Nk( imax+1) = Nk( imax +1)+1; % i n c r e a s e number o f n e a r e s t d e g r e e nodes
+e l s e Nk( imax −1) = Nk( imax −1)+1; end % i n c r e a s e number o f n e a r e s t d e g r e e nodes ( o t h e r s i d e )
+end
+
+%%
+
+NodeN cur = 0 ;
+i d x c u r = 1 ; % c u r r e n t i n d e x i n NodePairs v e c t o r
+NodePairs = −ones ( sum (Nk . ∗ ( 1 : kmax ) ’ ) , 1 ) ; % a l l o c a t e memory f o r . . .
+. . . NodePairs
+f o r k = 1 : kmax % l o o p f o r a l l p o s s i b l e d e g r e e s
+d r a f t = NodeN cur+1 : NodeN cur+Nk( k ) ; % g e n e r a t e node numbers . . .
+. . . f o r nodes o f d e g r e e k
+NodeN cur = NodeN cur + Nk( k ) ; % update c u r r e n t node c o u n t e r
+s t u b s d e g k = r e s h a p e ( repmat ( d r a f t , k , 1 ) , 1 , Nk( k )∗ k ) ; % c r e a t e . .
+. . . s t u b s f o r a l l nodes o f d e g r e e k
+NodePairs ( i d x c u r : ( i d x c u r + Nk( k )∗ k − 1 ) ) = s t u b s d e g k ; . . .
+. . . % i n s e r t them i n t o h a l f −e d g e s a r r a y
+i d x c u r = i d x c u r + Nk( k )∗ k ; % update i n d e x f o r i n s e r t i o n
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%..
+...%%%%%%%%%%
+%% S h u f f l i n g NodePairs b e f o r e s p l i t t i n g i n t o two columns
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%..
+...%%%%%%%%%%
+
+
+[ NodePairs , IX ] = s h u f f l e a l t ( NodePairs ) ; % s h u f f l e t he d e g r e e . . .
+. . . v e c t o r kk
+NodePairs = r e s h a p e ( NodePairs , l e n g t h ( NodePairs ) / 2 , 2 ) ; % s p l i t . . .
+. . . i n t o two e q u a l columns
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%..
+...%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%..
+...%%%%%%%%
+%%Remove s e l f − and multi−c o n n e c t i o n s
+
+
+NodePairs ( f i n d ( NodePairs ( : , 1 ) == NodePairs ( : , 2 ) ) , : ) = [ ] ; . . .
+. . . % remove s e l f −c o n n e c t i o n s
+NodePairs = s o r t ( NodePairs , 2 ) ; % s o r t so t h a t s m a l l e r node number . . .
+. . . comes 1 s t i n a p a i r
+NodePairs = unique ( NodePairs , ’ rows ’ ) ; % t a k e o n l y unique p a i r s . . .
+. . . ( The r e s u l t i n g v e c t o r i s s o r t e d i n a s c e n d i n g o r d e r ( 1 s t column ) )
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ARTIFICIALLY INCLUDE RIGHT AMOUNT OF ZERO DEGREE NODES ! ! ! ! !
+Nk0 = round (N∗P0 ) ;
+[ Adj , NnodesTot ] = FNodePairs2Adj ( NodePairs , Nk0 ) ;
+%% This c a l c u l a t e s a d e g r e e f o r each node %%%%%%%%%%%%%%%%%%%
+DEGREE LIST = sum ( Adj ) ;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+MATLAB code corresponding to Algorithm 1
+
+clear
+tic
+clear
+tic
+N=10ˆ5;
+z=l i n s p a c e ( 0 . 0 5 , 1 0 , 1 0 0 ) ;
+rho0 =[10ˆ( −2) ,10ˆ( −3) , 5 ∗ 1 0 ˆ ( − 3 ) ] ; % f r a c t i o n o f s e e d s wanted
+Runiform =0.18;% assuming uniform t h r e s h o l d s h e r e
+f o r w=1:3
+f o r l =1:100
+p=z ( l ) / (N−1);
+y=random ( ’ p o i s s ’ , z ( l ) , [ N , 1 ] ) ;
+unv = unique ( y ) ;
+a = [ unv h i s t c ( y , unv ) ] ;
+a1=a ( 2 : end , : ) ;
+Pk = a1 ( : , 2 ) / sum ( a ( : , 2 ) ) ;
+A = FConfMod ( Pk,1−sum (Pk ) , N ) ;
+d e g r e e=A∗ ones (N, 1 ) ; % d e g r e e ( i ) i s th e d e g r e e o f node i
+a c t u a l z=mean ( d e g r e e ) ;
+[ deg , indx ]=max( d e g r e e ) ;
+t h r e s h=Runiform ∗ ones (N, 1 ) ; % t h r e s h ( i ) i s th e t h r e s h o l d o f node i
+rho0N=f l o o r ( rho0 (w)∗N ) ;
+f o r q =1:100
+v=z e r o s (N, 1 ) ; % i n i t i a l i s e s t a t e v e c t o r ( v ( i ) i s s t a t e o f node i )
+s h u f f l e d i n d i c e s=randperm (N ) ;
+v ( s h u f f l e d i n d i c e s ( 1 : rho0N ))= ones ( rho0N , 1 ) ;
+v u l n v=A∗v>d e g r e e . ∗ t h r e s h ; % s e t s v u l n v ( i ) t o 1 i f number . . .
+. . . o f a c t i v e n e i g h b o u r s e x c e e e d s t h r e s h ( i )∗ d e g r e e ( i )
+new v=max( vuln v , v ) ; % assumes always on , so cannot turn o f f nodes
+w h i l e max( new v ̃=v)>0 % w h i l e new nodes have j u s t been a c t i v a t e d . . .
+v=new v ;
+v u l n v=A∗v>d e g r e e . ∗ t h r e s h ;
+new v=max( vuln v , v ) ;
+end
+num on=sum ( v ) ;
+f r a c o n ( q)=(num on/N ) ;
+f r a c o f f ( q)=( l e n g t h ( v)−sum ( v ) ) ;
+end
+D e n s i t y (w, l )=mean ( f r a c o n ) ;
+end
+end
+plot ( z , Density ( 1 , : ) , ’ b ’ )
+h o l d on ;
+plot ( z , Density ( 2 , : ) , ’ r ’ )
+h o l d on ;
+plot ( z , Density ( 3 , : ) , ’ g ’ )
+toc
+
+
+MATLAB code corresponding to Algorithm 2
+
+clear
+tic
+N=10ˆ5;
+z=l i n s p a c e ( 0 . 2 , 1 2 , 1 0 0 ) ;
+tau b =0.1;
+tau r =0.4;
+%b r e a k i n g p r o b a b i l i t y i s t a u b
+%c r e a t i n g p r o b a b i l i t y i s t a u r
+rho0 =10ˆ( −2); % f r a c t i o n o f s e e d s wanted
+Runiform =0.18;% assuming uniform t h r e s h o l d s h e r e
+D e n s i t y=z e r o s ( 1 , 1 0 0 ) ;
+f o r l =1:100
+p=z ( l ) / (N−1);
+y=random ( ’ p o i s s ’ , z ( l ) , [ N , 1 ] ) ;
+unv = unique ( y ) ;
+a = [ unv h i s t c ( y , unv ) ] ;
+a1=a ( 2 : end , : ) ;
+Pk = a1 ( : , 2 ) / sum ( a ( : , 2 ) ) ;
+A = FConfMod ( Pk,1−sum (Pk ) , N ) ;
+d e g r e e=A∗ ones (N, 1 ) ; % d e g r e e ( i ) i s th e d e g r e e o f node i
+a c t u a l z=mean ( d e g r e e ) ;
+[ deg , indx ]=max( d e g r e e ) ;
+t h r e s h=Runiform ∗ ones (N, 1 ) ; % t h r e s h ( i ) i s th e t h r e s h o l d o f node i
+rho0N=f l o o r ( rho0 ∗N ) ;
+[ l e f t r i g h t ]= f i n d (A ) ;
+f r a c o n=z e r o s ( 1 0 0 , 1 ) ;
+f r a c o f f=z e r o s ( 1 0 0 , 1 ) ;
+f o r q =1:100
+v=z e r o s (N, 1 ) ; % i n i t i a l i s e s t a t e v e c t o r ( v ( i ) i s s t a t e o f node i )
+s h u f f l e d i n d i c e s=randperm (N ) ;
+v ( s h u f f l e d i n d i c e s ( 1 : rho0N ))= ones ( rho0N , 1 ) ;
+v u l n v=A∗v>d e g r e e . ∗ t h r e s h ; % s e t s v u l n v ( i ) t o 1 i f number o f a c t i v e . . .
+. . . n e i g h b o u r s e x c e e e d s t h r e s h ( i )∗ d e g r e e ( i )
+new v=max( vuln v , v ) ; % assumes always on , so cannot turn o f f nodes
+w h i l e max( new v ̃=v)>0 % w h i l e new nodes have j u s t been a c t i v a t e d . . .
+v=new v ;
+v u l n v=A∗v>d e g r e e . ∗ t h r e s h ;
+new v=max( vuln v , v ) ;
+%
+Update network a c c o r d i n g t o b r e a k i n g r u l e
+j u=f i n d ( new v ( l e f t )+new v ( r i g h t ) == 1 ) ;
+f o r k=1: l e n g t h ( j u )
+i f ( rand <= t a u b )
+B=s p a r s e ( l e f t ( j u ( k ) ) , r i g h t ( j u ( k ) ) , 1 ,N,N ) ;
+A=A−B ;
+end
+end
+[ l e f t r i g h t ]= f i n d (A ) ;
+%Update network a c c o r d i n g t o re−w i r i n g r u l e f o r 1−1 and 0−0 e d g e s
+mu=f i n d ( new v ( l e f t )−new v ( r i g h t ) == 0 ) ;
+f o r k=1: l e n g t h (mu)
+i f ( rand <= t a u r )
+r i g h t (mu( k))= r a n d i (N ) ;
+end
+end
+[ l e f t r i g h t ]= f i n d (A ) ;
+end
+toc
+num on=sum ( v ) ;
+f r a c o n ( q)=(num on/N ) ;
+f r a c o f f ( q)=( l e n g t h ( v)−sum ( v ) ) ;
+end
+D e n s i t y ( 1 , l )=mean ( f r a c o n ) ;
+end
+plot ( z , Density ( 1 , : ) )
+toc
